@@ -35,6 +35,34 @@ class SortByFieldExtension extends \Twig_Extension {
         if (is_a($content, 'Doctrine\Common\Collections\Collection')) {
             $content = $content->toArray();
         }
+        else if(is_a($content,'Symfony\Component\Form\FormView')) {
+            usort($content->children, function ($a, $b) use ($sort_by, $direction) {
+                $flip = ($direction === 'desc') ? -1 : 1;
+                
+                $a_sort_value = 0;
+                
+                if(method_exists($a->vars['data'], 'get' . ucfirst($sort_by))) {
+                     $a_sort_value = $a->vars['data']->{'get' . ucfirst($sort_by)}();
+                }
+               
+                $b_sort_value = 0;
+                
+                if(method_exists($b->vars['data'], 'get' . ucfirst($sort_by))) {
+                     $b_sort_value = $b->vars['data']->{'get' . ucfirst($sort_by)}();
+                }
+                
+                if ($a_sort_value == $b_sort_value) {
+                    return 0;
+                } else if ($a_sort_value > $b_sort_value) {
+                    return (1 * $flip);
+                } else {
+                    return (-1 * $flip);
+                }
+            });
+            
+            return $content;
+        }
+        
 
         if (!is_array($content)) {
             throw new \InvalidArgumentException('Variable passed to the sortByField filter is not an array');
